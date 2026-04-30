@@ -7,7 +7,7 @@ import {
   supabase,
   uploadFoodImage,
   insertFoodLog,
-  fetchTodayCalories,
+  fetchTodayMacros,
 } from './lib/supabase'
 import {
   createChatSession,
@@ -18,6 +18,7 @@ import {
 } from './lib/gemini'
 
 const GOAL = 3000
+const MACRO_GOALS = { protein: 90, carbs: 300, fat: 60 }
 
 const SEED_MESSAGES = [
   {
@@ -32,6 +33,7 @@ export default function App() {
   const [session, setSession] = useState(undefined)
   const [messages, setMessages] = useState(SEED_MESSAGES)
   const [consumed, setConsumed] = useState(0)
+  const [macros, setMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
   const [sending, setSending] = useState(false)
   const chatRef = useRef(null)
 
@@ -49,9 +51,9 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return
-    fetchTodayCalories(session.user.id)
-      .then(setConsumed)
-      .catch((err) => console.error('fetchTodayCalories failed', err))
+    fetchTodayMacros(session.user.id)
+      .then(({ calories, ...rest }) => { setConsumed(calories); setMacros(rest) })
+      .catch((err) => console.error('fetchTodayMacros failed', err))
   }, [session])
 
   async function handleSend({ text, imageFile, imagePreview }) {
@@ -112,8 +114,8 @@ export default function App() {
         try {
           await insertFoodLog({ ...macros, image_url: publicImageUrl, userId: session.user.id })
           setConsumed((c) => c + (macros.calories || 0))
-          fetchTodayCalories(session.user.id)
-            .then(setConsumed)
+          fetchTodayMacros(session.user.id)
+            .then(({ calories, ...rest }) => { setConsumed(calories); setMacros(rest) })
             .catch((err) => console.error('refresh total failed', err))
         } catch (err) {
           console.error('insertFoodLog failed', err)
@@ -150,7 +152,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-[100svh] bg-[#f2f2f7]">
-      <Header consumed={consumed} goal={GOAL} />
+      <Header consumed={consumed} goal={GOAL} macros={macros} macroGoals={MACRO_GOALS} />
       <ChatList messages={messages} />
       <InputBar onSend={handleSend} disabled={sending} />
     </div>

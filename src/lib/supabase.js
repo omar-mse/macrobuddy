@@ -44,14 +44,22 @@ export async function insertFoodLog({
   return data
 }
 
-export async function fetchTodayCalories(userId) {
+export async function fetchTodayMacros(userId) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const { data, error } = await supabase
     .from('food_logs')
-    .select('calories')
+    .select('calories, protein, carbs, fat')
     .eq('user_id', userId)
     .gte('created_at', today.toISOString())
   if (error) throw error
-  return (data || []).reduce((sum, row) => sum + (row.calories || 0), 0)
+  return (data || []).reduce(
+    (acc, row) => ({
+      calories: acc.calories + (row.calories || 0),
+      protein: acc.protein + (row.protein || 0),
+      carbs: acc.carbs + (row.carbs || 0),
+      fat: acc.fat + (row.fat || 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+  )
 }
