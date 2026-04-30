@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import Header from './components/Header'
 import ChatList from './components/ChatList'
 import InputBar from './components/InputBar'
+import AuthScreen from './components/Auth'
 import {
+  supabase,
   uploadFoodImage,
   insertFoodLog,
   fetchTodayCalories,
@@ -27,6 +29,7 @@ const SEED_MESSAGES = [
 ]
 
 export default function App() {
+  const [session, setSession] = useState(undefined)
   const [messages, setMessages] = useState(SEED_MESSAGES)
   const [consumed, setConsumed] = useState(0)
   const [sending, setSending] = useState(false)
@@ -37,13 +40,22 @@ export default function App() {
   }
 
   useEffect(() => {
-    fetchTodayCalories()
-      .then(setConsumed)
-      .catch((err) => console.error('fetchTodayCalories failed', err))
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    if (!session) return
+    fetchTodayCalories(session.user.id)
+      .then(setConsumed)
+      .catch((err) => console.error('fetchTodayCalories failed', err))
+  }, [session])
+
   async function handleSend({ text, imageFile, imagePreview }) {
-    if (sending) return
+    if (sending || !session) return
     setSending(true)
 
     const userMsgId = `u-${Date.now()}`
@@ -66,7 +78,7 @@ export default function App() {
         mimeType = imageFile.type || 'image/jpeg'
         base64Image = await fileToBase64(imageFile)
         try {
-          publicImageUrl = await uploadFoodImage(imageFile)
+          publicImageUrl = await uploadFoodImage(imageFile, session.user.id)
           setMessages((prev) =>
             prev.map((m) =>
               m.id === userMsgId ? { ...m, image: publicImageUrl } : m,
@@ -98,9 +110,9 @@ export default function App() {
 
       if (macros) {
         try {
-          await insertFoodLog({ ...macros, image_url: publicImageUrl })
+          await insertFoodLog({ ...macros, image_url: publicImageUrl, userId: session.user.id })
           setConsumed((c) => c + (macros.calories || 0))
-          fetchTodayCalories()
+          fetchTodayCalories(session.user.id)
             .then(setConsumed)
             .catch((err) => console.error('refresh total failed', err))
         } catch (err) {
@@ -131,6 +143,10 @@ export default function App() {
       setSending(false)
     }
   }
+
+  if (session === undefined) return null
+
+  if (!session) return <AuthScreen />
 
   return (
     <div className="flex flex-col h-[100svh] bg-[#f2f2f7]">

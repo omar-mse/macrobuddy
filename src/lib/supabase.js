@@ -5,12 +5,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export const GUEST_UUID = '00000000-0000-0000-0000-000000000000'
 export const FOOD_IMAGES_BUCKET = 'food-images'
 
-export async function uploadFoodImage(file) {
+export async function uploadFoodImage(file, userId) {
   const ext = file.name?.split('.').pop() || 'jpg'
-  const path = `${GUEST_UUID}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
   const { error } = await supabase.storage
     .from(FOOD_IMAGES_BUCKET)
     .upload(path, file, { contentType: file.type, upsert: false })
@@ -26,11 +25,12 @@ export async function insertFoodLog({
   carbs,
   fat,
   image_url,
+  userId,
 }) {
   const { data, error } = await supabase
     .from('food_logs')
     .insert({
-      user_id: GUEST_UUID,
+      user_id: userId,
       food_name,
       calories,
       protein,
@@ -44,13 +44,13 @@ export async function insertFoodLog({
   return data
 }
 
-export async function fetchTodayCalories() {
+export async function fetchTodayCalories(userId) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const { data, error } = await supabase
     .from('food_logs')
     .select('calories')
-    .eq('user_id', GUEST_UUID)
+    .eq('user_id', userId)
     .gte('created_at', today.toISOString())
   if (error) throw error
   return (data || []).reduce((sum, row) => sum + (row.calories || 0), 0)
