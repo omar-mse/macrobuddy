@@ -1,4 +1,4 @@
-import { Flame } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import FitnessRing from './FitnessRing'
 
 const MACRO_CONFIG = [
@@ -12,6 +12,7 @@ export default function Header({
   goal = 3000,
   macros = { protein: 0, carbs: 0, fat: 0 },
   macroGoals = { protein: 150, carbs: 300, fat: 100 },
+  onOpenSettings,
 }) {
   return (
     <header className="sticky top-0 z-10 backdrop-blur-md bg-white/70 border-b-[0.5px] border-gray-200 px-4 pt-3 pb-3">
@@ -20,7 +21,14 @@ export default function Header({
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
           Active
         </span>
-        <Flame size={18} color="#ff9500" fill="#ff9500" />
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className="text-gray-400 hover:text-gray-600 active:scale-90 transition-transform"
+          aria-label="Settings"
+        >
+          <Settings size={18} />
+        </button>
       </div>
 
       <div className="flex flex-col items-center gap-2 mt-1">
@@ -43,13 +51,12 @@ export default function Header({
         {MACRO_CONFIG.map(({ key, label, color }) => {
           const eaten = Math.round(macros[key] || 0)
           const goal_g = macroGoals[key]
-          const remaining = Math.max(0, goal_g - eaten)
           const pct = Math.min(100, (eaten / goal_g) * 100)
           return (
             <div key={key}>
               <div className="flex items-baseline justify-between mb-1">
                 <span className="text-[10px] font-medium text-gray-400">{label}</span>
-                <span className="text-[10px] text-gray-400">{remaining}g left</span>
+                <span className="text-[10px] text-gray-400">{eaten}g</span>
               </div>
               <div className="h-[4px] w-full rounded-full bg-gray-100 overflow-hidden">
                 <div

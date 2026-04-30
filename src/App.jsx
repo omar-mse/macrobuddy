@@ -3,11 +3,16 @@ import Header from './components/Header'
 import ChatList from './components/ChatList'
 import InputBar from './components/InputBar'
 import AuthScreen from './components/Auth'
+import SettingsModal from './components/SettingsModal'
 import {
   supabase,
   uploadFoodImage,
   insertFoodLog,
   fetchTodayMacros,
+  fetchQuickAddLibrary,
+  saveQuickAdd,
+  fetchUserSettings,
+  upsertUserSettings,
 } from './lib/supabase'
 import {
   createChatSession,
@@ -17,8 +22,7 @@ import {
   stripMacroJSON,
 } from './lib/gemini'
 
-const GOAL = 3000
-const MACRO_GOALS = { protein: 90, carbs: 300, fat: 60 }
+const DEFAULT_GOALS = { calorie_goal: 3000, protein_goal: 90, carbs_goal: 300, fat_goal: 60 }
 
 const SEED_MESSAGES = [
   {
@@ -34,7 +38,10 @@ export default function App() {
   const [messages, setMessages] = useState(SEED_MESSAGES)
   const [consumed, setConsumed] = useState(0)
   const [macros, setMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
+  const [goals, setGoals] = useState(DEFAULT_GOALS)
+  const [library, setLibrary] = useState([])
   const [sending, setSending] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const chatRef = useRef(null)
 
   if (!chatRef.current) {
@@ -51,10 +58,65 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return
-    fetchTodayMacros(session.user.id)
+    const uid = session.user.id
+    fetchTodayMacros(uid)
       .then(({ calories, ...rest }) => { setConsumed(calories); setMacros(rest) })
       .catch((err) => console.error('fetchTodayMacros failed', err))
+    fetchQuickAddLibrary(uid)
+      .then(setLibrary)
+      .catch((err) => console.error('fetchQuickAddLibrary failed', err))
+    fetchUserSettings(uid)
+      .then((data) => { if (data) setGoals(data) })
+      .catch((err) => console.error('fetchUserSettings failed', err))
   }, [session])
+
+  async function handleSaveGoals(newGoals) {
+    await upsertUserSettings(session.user.id, newGoals)
+    setGoals(newGoals)
+  }
+
+  async function handleSaveQuickAdd(item) {
+    const saved = await saveQuickAdd(session.user.id, item)
+    setLibrary((prev) => [saved, ...prev])
+  }
+
+  async function handleQuickLog(item) {
+    const ts = Date.now()
+    setMessages((prev) => [
+      ...prev,
+      { id: `u-ql-${ts}`, role: 'user', text: item.meal_name, ts },
+    ])
+
+    try {
+      await insertFoodLog({
+        food_name: item.meal_name,
+        calories: item.calories,
+        protein: item.protein,
+        carbs: item.carbs,
+        fat: item.fat,
+        image_url: null,
+        userId: session.user.id,
+      })
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-ql-${ts}`,
+          role: 'ai',
+          text: `Logged ${item.meal_name} — ${item.calories} kcal, ${item.protein}g protein, ${item.carbs}g carbs, ${item.fat}g fat 💪`,
+          ts: Date.now(),
+        },
+      ])
+      fetchTodayMacros(session.user.id)
+        .then(({ calories, ...rest }) => { setConsumed(calories); setMacros(rest) })
+        .catch((err) => console.error('refresh total failed', err))
+    } catch (err) {
+      console.error('handleQuickLog failed', err)
+      setMessages((prev) => [
+        ...prev,
+        { id: `a-ql-err-${ts}`, role: 'ai', text: "Couldn't log that — please try again.", ts: Date.now() },
+      ])
+    }
+  }
 
   async function handleSend({ text, imageFile, imagePreview }) {
     if (sending || !session) return
@@ -63,13 +125,7 @@ export default function App() {
     const userMsgId = `u-${Date.now()}`
     setMessages((prev) => [
       ...prev,
-      {
-        id: userMsgId,
-        role: 'user',
-        text,
-        image: imagePreview,
-        ts: Date.now(),
-      },
+      { id: userMsgId, role: 'user', text, image: imagePreview, ts: Date.now() },
     ])
 
     try {
@@ -82,32 +138,20 @@ export default function App() {
         try {
           publicImageUrl = await uploadFoodImage(imageFile, session.user.id)
           setMessages((prev) =>
-            prev.map((m) =>
-              m.id === userMsgId ? { ...m, image: publicImageUrl } : m,
-            ),
+            prev.map((m) => m.id === userMsgId ? { ...m, image: publicImageUrl } : m),
           )
         } catch (err) {
           console.error('image upload failed', err)
         }
       }
 
-      const aiText = await sendToBuddy(chatRef.current, {
-        text,
-        base64Image,
-        mimeType,
-      })
-
+      const aiText = await sendToBuddy(chatRef.current, { text, base64Image, mimeType })
       const macros = extractMacroJSON(aiText)
       const visibleText = macros ? stripMacroJSON(aiText) || 'Logged it 💪' : aiText
 
       setMessages((prev) => [
         ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: 'ai',
-          text: visibleText,
-          ts: Date.now(),
-        },
+        { id: `a-${Date.now()}`, role: 'ai', text: visibleText, ts: Date.now() },
       ])
 
       if (macros) {
@@ -121,12 +165,7 @@ export default function App() {
           console.error('insertFoodLog failed', err)
           setMessages((prev) => [
             ...prev,
-            {
-              id: `a-err-${Date.now()}`,
-              role: 'ai',
-              text: "I couldn't save that to your log — check the food_logs table.",
-              ts: Date.now(),
-            },
+            { id: `a-err-${Date.now()}`, role: 'ai', text: "I couldn't save that to your log — check the food_logs table.", ts: Date.now() },
           ])
         }
       }
@@ -134,12 +173,7 @@ export default function App() {
       console.error('sendToBuddy failed', err)
       setMessages((prev) => [
         ...prev,
-        {
-          id: `a-err-${Date.now()}`,
-          role: 'ai',
-          text: 'Something went wrong reaching the AI. Try again in a sec.',
-          ts: Date.now(),
-        },
+        { id: `a-err-${Date.now()}`, role: 'ai', text: 'Something went wrong reaching the AI. Try again in a sec.', ts: Date.now() },
       ])
     } finally {
       setSending(false)
@@ -147,14 +181,32 @@ export default function App() {
   }
 
   if (session === undefined) return null
-
   if (!session) return <AuthScreen />
 
   return (
     <div className="flex flex-col h-[100svh] bg-[#f2f2f7]">
-      <Header consumed={consumed} goal={GOAL} macros={macros} macroGoals={MACRO_GOALS} />
+      <Header
+        consumed={consumed}
+        goal={goals.calorie_goal}
+        macros={macros}
+        macroGoals={{ protein: goals.protein_goal, carbs: goals.carbs_goal, fat: goals.fat_goal }}
+        onOpenSettings={() => setShowSettings(true)}
+      />
       <ChatList messages={messages} />
-      <InputBar onSend={handleSend} disabled={sending} />
+      <InputBar
+        onSend={handleSend}
+        onSaveQuickAdd={handleSaveQuickAdd}
+        onQuickLog={handleQuickLog}
+        libraryItems={library}
+        disabled={sending}
+      />
+      {showSettings && (
+        <SettingsModal
+          current={goals}
+          onSave={handleSaveGoals}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
     </div>
   )
 }

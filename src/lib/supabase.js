@@ -44,6 +44,43 @@ export async function insertFoodLog({
   return data
 }
 
+export async function fetchUserSettings(userId) {
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('calorie_goal, protein_goal, carbs_goal, fat_goal')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+export async function upsertUserSettings(userId, { calorie_goal, protein_goal, carbs_goal, fat_goal }) {
+  const { error } = await supabase
+    .from('user_settings')
+    .upsert({ user_id: userId, calorie_goal, protein_goal, carbs_goal, fat_goal }, { onConflict: 'user_id' })
+  if (error) throw error
+}
+
+export async function fetchQuickAddLibrary(userId) {
+  const { data, error } = await supabase
+    .from('quick_add_library')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+export async function saveQuickAdd(userId, { meal_name, calories, protein, carbs, fat }) {
+  const { data, error } = await supabase
+    .from('quick_add_library')
+    .insert({ user_id: userId, meal_name, calories, protein, carbs, fat })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function fetchTodayMacros(userId) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
