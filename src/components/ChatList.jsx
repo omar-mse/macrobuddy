@@ -14,15 +14,11 @@ export default function ChatList({ messages }) {
         const prev = messages[i - 1]
         const next = messages[i + 1]
         const isRoleSwitch = !prev || prev.role !== m.role
-        const isLastInRun = !next || next.role !== m.role
-        const showAvatar = m.role === 'ai' && isLastInRun
         return (
           <ChatBubble
             key={m.id}
             message={m}
-            showAvatar={showAvatar}
             isRoleSwitch={isRoleSwitch}
-            isLastInRun={isLastInRun}
           />
         )
       })}

@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 
-export default function ChatBubble({ message, showAvatar, isRoleSwitch }) {
+export default function ChatBubble({ message, isRoleSwitch }) {
   const isUser = message.role === 'user'
   const spacingClass = isRoleSwitch ? 'mt-4' : 'mt-1'
 
@@ -22,13 +22,7 @@ export default function ChatBubble({ message, showAvatar, isRoleSwitch }) {
   }
 
   return (
-    <div className={clsx('flex items-end gap-1.5', spacingClass)}>
-      <span
-        className="w-6 text-xl leading-none text-center shrink-0 select-none"
-        aria-label={showAvatar ? 'MacroBuddy' : undefined}
-      >
-        {showAvatar ? '🍽️' : ' '}
-      </span>
+    <div className={clsx('flex', spacingClass)}>
       <div className="max-w-[75%] bg-[#e9e9eb] text-black px-4 py-2.5 text-[15px] leading-snug rounded-3xl break-words">
         {message.text}
       </div>
