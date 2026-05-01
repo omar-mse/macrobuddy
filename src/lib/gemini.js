@@ -19,8 +19,8 @@ const model = genAI.getGenerativeModel({
   systemInstruction: SYSTEM_PROMPT,
 })
 
-export function createChatSession() {
-  return model.startChat({ history: [] })
+export function createChatSession(history = []) {
+  return model.startChat({ history })
 }
 
 export async function sendToBuddy(chat, { text, base64Image, mimeType }) {

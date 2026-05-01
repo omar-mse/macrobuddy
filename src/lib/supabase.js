@@ -81,6 +81,32 @@ export async function saveQuickAdd(userId, { meal_name, calories, protein, carbs
   return data
 }
 
+export async function fetchTodayChatMessages(userId) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('id, role, text, image, ts')
+    .eq('user_id', userId)
+    .gte('created_at', today.toISOString())
+    .order('ts', { ascending: true })
+  if (error) throw error
+  return (data || []).map((row) => ({
+    id: row.id,
+    role: row.role,
+    text: row.text,
+    image: row.image || null,
+    ts: row.ts,
+  }))
+}
+
+export async function insertChatMessage(userId, { role, text, image, ts }) {
+  const { error } = await supabase
+    .from('chat_messages')
+    .insert({ user_id: userId, role, text: text || '', image: image || null, ts })
+  if (error) throw error
+}
+
 export async function fetchTodayMacros(userId) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)

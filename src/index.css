@@ -16,4 +16,5 @@ body,
   margin: 0;
   background: #f2f2f7;
   color: #000;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
