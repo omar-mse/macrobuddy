@@ -80,10 +80,10 @@ export default function InputBar({ onSend, onSaveQuickAdd, onQuickLog, libraryIt
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
-            className={`w-8 h-8 flex items-center justify-center transition-colors ${dk ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`w-9 h-9 flex items-center justify-center rounded-full border transition-colors active:scale-90 ${dk ? 'border-white/20 text-gray-300 hover:text-white hover:border-white/40' : 'border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400'}`}
             aria-label="Quick add"
           >
-            <Plus size={22} />
+            <Plus size={18} />
           </button>
 
           {menuOpen && (
@@ -119,10 +119,10 @@ export default function InputBar({ onSend, onSaveQuickAdd, onQuickLog, libraryIt
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className={`w-8 h-8 flex items-center justify-center shrink-0 transition-colors ${dk ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`w-9 h-9 flex items-center justify-center rounded-full border shrink-0 transition-colors active:scale-90 ${dk ? 'border-white/20 text-gray-300 hover:text-white hover:border-white/40' : 'border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400'}`}
           aria-label="Camera"
         >
-          <Camera size={22} />
+          <Camera size={18} />
         </button>
         <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={pickImage} className="hidden" />
 
@@ -136,16 +136,17 @@ export default function InputBar({ onSend, onSaveQuickAdd, onQuickLog, libraryIt
             disabled={disabled}
             className={`flex-1 bg-transparent text-[15px] py-1 focus:outline-none disabled:opacity-60 ${dk ? 'text-white placeholder:text-gray-500' : 'placeholder:text-gray-400'}`}
           />
-          {canSend && (
-            <button
-              type="button"
-              onClick={send}
-              className="w-7 h-7 rounded-full bg-[#007aff] text-white flex items-center justify-center shrink-0"
-              aria-label="Send"
-            >
-              <ArrowUp size={16} />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={send}
+            disabled={!canSend}
+            className={`w-7 h-7 rounded-full bg-[#007aff] text-white flex items-center justify-center shrink-0 transition-all duration-200 ${
+              canSend ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
+            }`}
+            aria-label="Send"
+          >
+            <ArrowUp size={16} />
+          </button>
         </div>
       </div>
 

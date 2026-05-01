@@ -53,7 +53,7 @@ export default function Header({
       {/* Brand + ring */}
       <div className="flex flex-col items-center gap-2 mt-2">
         <span
-          className={`text-[17px] font-black tracking-[-0.04em] transition-colors duration-300 ${
+          className={`text-[26px] font-black tracking-normal transition-colors duration-300 ${
             dk ? 'text-white' : 'text-[#0a0a0a]'
           }`}
         >

@@ -82,6 +82,7 @@ export default function App() {
   useEffect(() => {
     if (!session) return
     setReady(false)
+    setShowSettings(false)
     const uid = session.user.id
 
     Promise.all([
