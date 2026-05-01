@@ -62,7 +62,13 @@ export default function App() {
   const [library, setLibrary] = useState([])
   const [sending, setSending] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true')
   const chatRef = useRef(null)
+
+  useEffect(() => {
+    document.body.style.backgroundColor = darkMode ? '#000000' : '#f2f2f7'
+    localStorage.setItem('darkMode', darkMode)
+  }, [darkMode])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
@@ -247,25 +253,28 @@ export default function App() {
   }
 
   if (session === undefined) return null
-  if (!session) return <AuthScreen />
+  if (!session) return <AuthScreen darkMode={darkMode} />
   if (!ready) return null
 
   return (
-    <div className="flex flex-col h-[100svh] bg-[#f2f2f7]">
+    <div className={`flex flex-col h-[100svh] transition-colors duration-300 ${darkMode ? 'bg-black' : 'bg-[#f2f2f7]'}`}>
       <Header
         consumed={consumed}
         goal={goals.calorie_goal}
         macros={macros}
         macroGoals={{ protein: goals.protein_goal, carbs: goals.carbs_goal, fat: goals.fat_goal }}
         onOpenSettings={() => setShowSettings(true)}
+        darkMode={darkMode}
+        onToggleTheme={() => setDarkMode((d) => !d)}
       />
-      <ChatList messages={messages} />
+      <ChatList messages={messages} darkMode={darkMode} />
       <InputBar
         onSend={handleSend}
         onSaveQuickAdd={handleSaveQuickAdd}
         onQuickLog={handleQuickLog}
         libraryItems={library}
         disabled={sending}
+        darkMode={darkMode}
       />
       {showSettings && (
         <SettingsModal
@@ -273,6 +282,7 @@ export default function App() {
           onSave={handleSaveGoals}
           onClose={() => setShowSettings(false)}
           onLogout={handleLogout}
+          darkMode={darkMode}
         />
       )}
     </div>
