@@ -3,6 +3,7 @@ import Header from './components/Header'
 import ChatList from './components/ChatList'
 import InputBar from './components/InputBar'
 import AuthScreen from './components/Auth'
+import OnboardingScreen from './components/OnboardingScreen'
 import SettingsModal from './components/SettingsModal'
 import {
   supabase,
@@ -61,7 +62,8 @@ export default function App() {
   const [goals, setGoals] = useState(DEFAULT_GOALS)
   const [library, setLibrary] = useState([])
   const [sending, setSending] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
+  const [showSettings, setShowSettings]     = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true')
   const chatRef = useRef(null)
 
@@ -96,7 +98,11 @@ export default function App() {
         setConsumed(calories)
         setMacros(macroRest)
         setLibrary(lib)
-        if (settings) setGoals(settings)
+        if (settings) {
+          setGoals(settings)
+        } else {
+          setShowOnboarding(true)
+        }
 
         if (savedMessages.length > 0) {
           setMessages([SEED_MESSAGE, ...savedMessages])
@@ -120,6 +126,17 @@ export default function App() {
         setReady(true)
       })
   }, [session])
+
+  async function handleOnboardingComplete(goals) {
+    try { await upsertUserSettings(session.user.id, goals) } catch (e) { console.error(e) }
+    setGoals(goals)
+    setShowOnboarding(false)
+  }
+
+  function handleRecalculate() {
+    setShowSettings(false)
+    setShowOnboarding(true)
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -256,6 +273,13 @@ export default function App() {
   if (session === undefined) return null
   if (!session) return <AuthScreen darkMode={darkMode} />
   if (!ready) return null
+  if (showOnboarding) return (
+    <OnboardingScreen
+      onComplete={handleOnboardingComplete}
+      darkMode={darkMode}
+      userId={session.user.id}
+    />
+  )
 
   return (
     <div className={`flex flex-col h-[100svh] transition-colors duration-300 ${darkMode ? 'bg-black' : 'bg-[#f2f2f7]'}`}>
@@ -280,9 +304,9 @@ export default function App() {
       {showSettings && (
         <SettingsModal
           current={goals}
-          onSave={handleSaveGoals}
           onClose={() => setShowSettings(false)}
           onLogout={handleLogout}
+          onRecalculate={handleRecalculate}
           darkMode={darkMode}
         />
       )}

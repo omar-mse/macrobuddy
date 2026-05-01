@@ -47,17 +47,17 @@ export async function insertFoodLog({
 export async function fetchUserSettings(userId) {
   const { data, error } = await supabase
     .from('user_settings')
-    .select('calorie_goal, protein_goal, carbs_goal, fat_goal')
+    .select('calorie_goal, protein_goal, carbs_goal, fat_goal, activity_level')
     .eq('user_id', userId)
     .maybeSingle()
   if (error) throw error
   return data
 }
 
-export async function upsertUserSettings(userId, { calorie_goal, protein_goal, carbs_goal, fat_goal }) {
+export async function upsertUserSettings(userId, { calorie_goal, protein_goal, carbs_goal, fat_goal, activity_level }) {
   const { error } = await supabase
     .from('user_settings')
-    .upsert({ user_id: userId, calorie_goal, protein_goal, carbs_goal, fat_goal }, { onConflict: 'user_id' })
+    .upsert({ user_id: userId, calorie_goal, protein_goal, carbs_goal, fat_goal, activity_level }, { onConflict: 'user_id' })
   if (error) throw error
 }
 
