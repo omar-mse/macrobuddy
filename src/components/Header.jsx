@@ -26,28 +26,22 @@ export default function Header({
     >
       {/* Top row */}
       <div className="flex justify-between items-center">
-        <span className={`text-[11px] font-semibold flex items-center gap-1.5 tracking-wide ${dk ? 'text-emerald-400' : 'text-emerald-600'}`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-          ACTIVE
-        </span>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className={`transition-all active:scale-90 ${dk ? 'text-gray-500 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'}`}
-            aria-label={dk ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {dk ? <Sun size={17} /> : <Moon size={17} />}
-          </button>
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            className={`transition-all active:scale-90 ${dk ? 'text-gray-500 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'}`}
-            aria-label="Settings"
-          >
-            <Settings size={17} />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          className={`transition-all active:scale-90 ${dk ? 'text-gray-500 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'}`}
+          aria-label={dk ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {dk ? <Sun size={21} /> : <Moon size={21} />}
+        </button>
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className={`transition-all active:scale-90 ${dk ? 'text-gray-500 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'}`}
+          aria-label="Settings"
+        >
+          <Settings size={21} />
+        </button>
       </div>
 
       {/* Brand + ring */}
