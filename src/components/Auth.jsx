@@ -71,7 +71,7 @@ export default function AuthScreen({ darkMode = false }) {
             bulkr
           </h1>
           <p className={`text-[13px] font-medium tracking-wide ${dk ? 'text-gray-500' : 'text-gray-400'}`}>
-            Scale your strength.
+            built for the bulk.
           </p>
         </div>
 
