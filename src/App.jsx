@@ -64,7 +64,7 @@ export default function App() {
   const [sending, setSending] = useState(false)
   const [showSettings, setShowSettings]     = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') !== 'false')
   const chatRef = useRef(null)
 
   useEffect(() => {
@@ -160,7 +160,7 @@ export default function App() {
       ...prev,
       { id: `u-ql-${userTs}`, role: 'user', text: userText, ts: userTs },
     ])
-    insertChatMessage(session.user.id, { role: 'user', text: userText, image: null, ts: userTs })
+    insertChatMessage(session.user.id, { role: 'user', text: userText, image: null })
       .catch((err) => console.error('save quick-log user msg failed', err))
 
     try {
@@ -180,7 +180,7 @@ export default function App() {
         ...prev,
         { id: `a-ql-${userTs}`, role: 'ai', text: aiText, ts: aiTs },
       ])
-      insertChatMessage(session.user.id, { role: 'ai', text: aiText, image: null, ts: aiTs })
+      insertChatMessage(session.user.id, { role: 'ai', text: aiText, image: null })
         .catch((err) => console.error('save quick-log ai msg failed', err))
 
       fetchTodayMacros(session.user.id)
@@ -230,7 +230,7 @@ export default function App() {
       }
 
       const savedImageUrl = publicImageUrl || fallbackDataUrl
-      insertChatMessage(session.user.id, { role: 'user', text, image: savedImageUrl, ts: userTs })
+      insertChatMessage(session.user.id, { role: 'user', text, image: savedImageUrl })
         .catch((err) => console.error('save user msg failed', err))
 
       const aiText = await sendToBuddy(chatRef.current, { text, base64Image, mimeType })
@@ -242,7 +242,7 @@ export default function App() {
         ...prev,
         { id: `a-${aiTs}`, role: 'ai', text: visibleText, ts: aiTs },
       ])
-      insertChatMessage(session.user.id, { role: 'ai', text: visibleText, image: null, ts: aiTs })
+      insertChatMessage(session.user.id, { role: 'ai', text: visibleText, image: null })
         .catch((err) => console.error('save ai msg failed', err))
 
       if (macroData) {
