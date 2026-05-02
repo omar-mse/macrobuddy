@@ -14,7 +14,7 @@ npm run lint      # ESLint (React hooks + refresh rules)
 No test framework is configured.
 
 ## Environment Variables
-
+ 
 Requires a `.env` file with:
 ```
 VITE_SUPABASE_URL=
